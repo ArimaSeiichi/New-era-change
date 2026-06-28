@@ -1926,28 +1926,43 @@
         // 更新第三页预览
         function updateDesignPreview() {
             let yamlString = "<character_info character=\"<user>\">\n<user>:\n";
-            const powerName = $('#power-name').val();
-            const powerDesc = $('#power-desc').val();
 
-            yamlString += "  异能:\n";
-            yamlString += `    名称: ${powerName || ''}\n`;
-            yamlString += `    类型: ${selectedPowerType || ''}\n`;
-            yamlString += `    阶位: ${$('#power-rank').val() || ''}\n`;
-            yamlString += `    描述: |\n      ${(powerDesc || '').replace(/\n/g, '\n      ')}\n`;
+            const isJujutsu = $('#system-select .type-card[data-system=\"jujutsu\"]').hasClass('active');
 
-            // 收集多维评价
-            const evalDims = ['破坏力', '防护性', '持续性', '精密度', '功能性', '射程范围'];
-            const evalIds = ['eval-destruction', 'eval-defense', 'eval-persistence', 'eval-precision', 'eval-versatility', 'eval-range'];
-            const evalLines = [];
-            for (let i = 0; i < evalDims.length; i++) {
-                const rating = $(`#${evalIds[i]}`).val().trim();
-                if (!rating) continue;
-                const note = $(`#${evalIds[i]}-note`).val().trim();
-                const line = note ? `${evalDims[i]}：${rating}，${note}` : `${evalDims[i]}：${rating}`;
-                evalLines.push(line);
-            }
-            if (evalLines.length > 0) {
-                yamlString += `    多维评价: |\n      ${evalLines.join('\n      ')}\n`;
+            if (isJujutsu) {
+                // 咒术系
+                const jName = $('#jujutsu-name').val();
+                const jDesc = $('#jujutsu-desc').val();
+                const jRank = $('#jujutsu-rank').val();
+                const jTrait = $('#jujutsu-trait').val();
+                yamlString += "  生得术式:\n";
+                yamlString += `    名称: ${jName || ''}\n`;
+                yamlString += `    评级: ${jRank || ''}\n`;
+                if (jTrait) yamlString += `    咒力特征: ${jTrait}\n`;
+                yamlString += `    描述: |\n      ${(jDesc || '').replace(/\n/g, '\n      ')}\n`;
+            } else {
+                // 异能系
+                const powerName = $('#power-name').val();
+                const powerDesc = $('#power-desc').val();
+                yamlString += "  异能:\n";
+                yamlString += `    名称: ${powerName || ''}\n`;
+                yamlString += `    类型: ${selectedPowerType || ''}\n`;
+                yamlString += `    阶位: ${$('#power-rank').val() || ''}\n`;
+                yamlString += `    描述: |\n      ${(powerDesc || '').replace(/\n/g, '\n      ')}\n`;
+
+                const evalDims = ['破坏力', '防护性', '持续性', '精密度', '功能性', '射程范围'];
+                const evalIds = ['eval-destruction', 'eval-defense', 'eval-persistence', 'eval-precision', 'eval-versatility', 'eval-range'];
+                const evalLines = [];
+                for (let i = 0; i < evalDims.length; i++) {
+                    const rating = $(`#${evalIds[i]}`).val().trim();
+                    if (!rating) continue;
+                    const note = $(`#${evalIds[i]}-note`).val().trim();
+                    const line = note ? `${evalDims[i]}：${rating}，${note}` : `${evalDims[i]}：${rating}`;
+                    evalLines.push(line);
+                }
+                if (evalLines.length > 0) {
+                    yamlString += `    多维评价: |\n      ${evalLines.join('\n      ')}\n`;
+                }
             }
 
             let gender = $('#char-gender-select').val();
@@ -1986,8 +2001,12 @@
             yamlString += "</character_info>";
             $('#preview-box').text(yamlString);
 
-            // 更新按钮状态，但现在这个按钮是"下一步"
-            $('#design-next-btn').prop('disabled', !powerName || !powerDesc || !selectedPowerType);
+            // 更新按钮状态
+            if (isJujutsu) {
+                $('#design-next-btn').prop('disabled', !$('#jujutsu-name').val() || !$('#jujutsu-desc').val());
+            } else {
+                $('#design-next-btn').prop('disabled', !$('#power-name').val() || !$('#power-desc').val() || !selectedPowerType);
+            }
         }
 
         // === 世界调整相关逻辑 (第四页) ===
