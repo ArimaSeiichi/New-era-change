@@ -1,0 +1,2780 @@
+```html
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        /* === CSS 变量定义 === */
+        :root {
+            --main-color: #00ffff;
+            --main-color-rgb: 0, 255, 255;
+            --bg-color: #0a0a0c;
+            --text-color: #e0e0e0;
+            --glass-bg: rgba(20, 24, 30, 0.75);
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --option-bg: #151920;
+            --success-color: #00ff9d;
+            --warn-color: #ffaa00;
+            --danger-color: #ff4444;
+            --off-color: #555;
+            --constant-color: #00aaff;
+        }
+
+        /* 全局重置 */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            min-height: 100vh;
+            /* 允许垂直滚动，不再强制 hidden */
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* 改为顶部对齐，防止内容过长时头部被切掉 */
+            padding-top: 2vh;
+            padding-bottom: 5vh;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(var(--main-color-rgb), 0.2);
+            border-radius: 3px;
+            transition: background 0.3s;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(var(--main-color-rgb), 0.5);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        /* 背景动画 */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(20, 20, 30, 0.8), #000 90%),
+                linear-gradient(45deg, rgba(0, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 255, 255, 0.02) 75%),
+                linear-gradient(45deg, rgba(0, 255, 255, 0.02) 25%, transparent 25%, transparent 75%, rgba(0, 255, 255, 0.02) 75%);
+            background-size: 100% 100%, 60px 60px, 60px 60px;
+            z-index: 0;
+            animation: bgScroll 60s linear infinite;
+        }
+
+        @keyframes bgScroll {
+            100% {
+                background-position: 0 0, 60px 60px, 90px 90px;
+            }
+        }
+
+        /* 主窗口 */
+        .main-window {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 1200px;
+            /* 移除固定高度限制，改用最小高度，让内容撑开 */
+            min-height: 85vh;
+            height: auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(var(--main-color-rgb), 0.1);
+            border-radius: 6px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+            overflow: visible;
+            /* 允许溢出 */
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .window-deco-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--main-color), transparent);
+            box-shadow: 0 0 10px var(--main-color);
+            z-index: 20;
+        }
+
+        .corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-color: rgba(var(--main-color-rgb), 0.5);
+            border-style: solid;
+            z-index: 30;
+        }
+
+        .tl {
+            top: -1px;
+            left: -1px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .tr {
+            top: -1px;
+            right: -1px;
+            border-width: 2px 2px 0 0;
+        }
+
+        .bl {
+            bottom: -1px;
+            left: -1px;
+            border-width: 0 0 2px 2px;
+        }
+
+        .br {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 2px 2px 0;
+        }
+
+        /* === 流程条 === */
+        .steps-container {
+            width: 100%;
+            padding: 20px 40px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 25;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .step-list {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        .step-list::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+
+        .step-item {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.5;
+            transition: all 0.4s;
+        }
+
+        .step-item.active {
+            opacity: 1;
+        }
+
+        .step-item.completed {
+            opacity: 1;
+            color: var(--main-color);
+        }
+
+        .step-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #1a1a20;
+            border: 2px solid #555;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.4s;
+        }
+
+        .step-item.active .step-dot {
+            border-color: var(--main-color);
+            background: rgba(var(--main-color-rgb), 0.1);
+            box-shadow: 0 0 15px rgba(var(--main-color-rgb), 0.4);
+        }
+
+        .step-item.completed .step-dot {
+            border-color: var(--main-color);
+            background: var(--main-color);
+            color: #000;
+        }
+
+        .step-label {
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        /* === 视图容器 === */
+        .view-wrapper {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* 内容少时靠上 */
+            width: 100%;
+            min-height: 400px;
+        }
+
+        .view-container {
+            width: 100%;
+            box-sizing: border-box;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            /* 确保自然文档流 */
+        }
+
+        .view-container.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.99);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* === 通用按钮和输入组件 === */
+        .form-fieldset {
+            border: 1px solid rgba(0, 255, 255, 0.15);
+            border-radius: 4px;
+            padding: 20px;
+            margin: 0 0 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-legend {
+            color: var(--main-color);
+            font-weight: bold;
+            padding: 0 10px;
+            margin-left: 10px;
+            text-shadow: 0 0 5px var(--main-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-group label {
+            color: #ccc;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            padding: 8px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            background: rgba(var(--main-color-rgb), 0.05);
+            border-color: var(--main-color);
+            box-shadow: 0 0 10px rgba(var(--main-color-rgb), 0.2);
+            outline: none;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-group select option {
+            background: #1a1a1e;
+        }
+
+        .mandatory-star {
+            color: #ff4d4d;
+            margin-left: 4px;
+        }
+
+        /* 细致设定按钮 */
+        .detail-btn {
+            background: transparent;
+            border: 1px dashed rgba(var(--main-color-rgb), 0.3);
+            color: #00cccc;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .detail-btn:hover {
+            border-color: var(--main-color);
+            color: var(--main-color);
+        }
+
+        .sub-fields {
+            display: none;
+            margin-top: 10px;
+            padding-left: 10px;
+            border-left: 2px solid rgba(var(--main-color-rgb), 0.1);
+            gap: 8px;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .sub-fields.open {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+
+        /* 性别自定义布局 */
+        .gender-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .gender-select-wrapper {
+            transition: width 0.3s;
+            width: 100%;
+        }
+
+        .gender-custom-wrapper {
+            display: none;
+            flex-grow: 1;
+            animation: fadeIn 0.3s;
+        }
+
+        .gender-row.custom-mode .gender-select-wrapper {
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .gender-row.custom-mode .gender-custom-wrapper {
+            display: block;
+        }
+
+        /* 异能类型卡片 */
+        .type-cards {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .type-card {
+            flex: 1 1 80px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .type-card:hover {
+            transform: translateY(-2px);
+            z-index: 10;
+        }
+
+        .type-card.active {
+            border-color: var(--main-color);
+            background: rgba(var(--main-color-rgb), 0.1);
+            box-shadow: 0 0 10px rgba(var(--main-color-rgb), 0.15);
+            color: #fff;
+            text-shadow: 0 0 5px var(--main-color);
+        }
+
+        /* 类型特定颜色 (保留) */
+        .type-card[data-type="阿瑞斯"]:hover,
+        .type-card[data-type="阿瑞斯"].active {
+            border-color: #ff4d4d;
+            color: #ffcccc;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.3);
+        }
+
+        .type-card[data-type="宙斯"]:hover,
+        .type-card[data-type="宙斯"].active {
+            border-color: #aa88ff;
+            color: #e6ccff;
+            box-shadow: 0 0 10px rgba(170, 136, 255, 0.3);
+        }
+
+        .type-card[data-type="雅典娜"]:hover,
+        .type-card[data-type="雅典娜"].active {
+            border-color: #4dff88;
+            color: #ccffdd;
+            box-shadow: 0 0 10px rgba(77, 255, 136, 0.3);
+        }
+
+        .type-card[data-type="赫菲斯托斯"]:hover,
+        .type-card[data-type="赫菲斯托斯"].active {
+            border-color: #ffaa4d;
+            color: #ffddcc;
+            box-shadow: 0 0 10px rgba(255, 170, 77, 0.3);
+        }
+
+        .type-card[data-type="阿波罗"]:hover,
+        .type-card[data-type="阿波罗"].active {
+            border-color: #ffff4d;
+            color: #ffffcc;
+            box-shadow: 0 0 10px rgba(255, 255, 77, 0.3);
+        }
+
+        /* 悬浮提示 Tooltip */
+        .type-card .tooltip {
+            visibility: hidden;
+            width: max-content;
+            min-width: 220px;
+            max-width: 380px;
+            background-color: rgba(10, 10, 15, 0.95);
+            color: #fff;
+            text-align: left;
+            border: 1px solid currentColor;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 99999;
+            top: 115%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+            font-size: 0.8em;
+            line-height: 1.3;
+            pointer-events: none;
+            box-sizing: border-box;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .type-card:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .type-card .tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent currentColor transparent;
+        }
+
+        /* === 异能多维评价 === */
+        .eval-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .eval-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .eval-item-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .eval-label {
+            position: relative;
+            cursor: help;
+            color: #aaa;
+            font-size: 0.85em;
+            white-space: nowrap;
+            min-width: 56px;
+            border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
+        }
+
+        .eval-label:hover {
+            color: #fff;
+            z-index: 10;
+        }
+
+        .eval-label .eval-tooltip {
+            visibility: hidden;
+            width: 300px;
+            max-width: 80vw;
+            background-color: rgba(10, 10, 15, 0.98);
+            color: #ddd;
+            text-align: left;
+            border: 1px solid var(--main-color);
+            border-radius: 4px;
+            padding: 10px;
+            position: absolute;
+            z-index: 99999;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            font-size: 0.8em;
+            line-height: 1.45;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            white-space: normal;
+        }
+
+        .eval-label:hover .eval-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .eval-input {
+            width: 52px !important;
+            text-align: center;
+            padding: 4px 6px !important;
+            font-size: 0.9em !important;
+            flex-shrink: 0;
+        }
+
+        /* 多维评价批注栏 */
+        .eval-note-input {
+            width: 100% !important;
+            padding: 3px 6px !important;
+            font-size: 0.78em !important;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            color: #999;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        .eval-note-input::placeholder {
+            color: #444;
+        }
+        .eval-note-input:focus {
+            background: rgba(var(--main-color-rgb), 0.05);
+            border-color: var(--main-color);
+            box-shadow: 0 0 10px rgba(var(--main-color-rgb), 0.2);
+            outline: none;
+            color: #ccc;
+        }
+
+        /* 一般 Tooltip */
+        .general-tooltip {
+            visibility: hidden;
+            width: max-content;
+            max-width: 300px;
+            background-color: rgba(10, 10, 15, 0.98);
+            color: #fff;
+            text-align: left;
+            border: 1px solid var(--main-color);
+            border-radius: 4px;
+            padding: 8px;
+            position: absolute;
+            z-index: 99999;
+            top: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: pre-wrap;
+            font-size: 0.85em;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 备注问号按钮 */
+        .note-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #333;
+            color: #666;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            transition: all 0.3s;
+            margin-left: auto;
+        }
+
+        .note-btn.active {
+            background: #00cccc;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 0 8px #00cccc;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 204, 204, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 204, 204, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 204, 204, 0);
+            }
+        }
+
+        .special-note-box {
+            display: none;
+            background: rgba(0, 204, 204, 0.1);
+            border: 1px solid rgba(0, 204, 204, 0.3);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #ccffff;
+            margin-bottom: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 纯图标返回按钮样式 */
+        .icon-back-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.6);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .icon-back-btn:hover {
+            background: rgba(var(--main-color-rgb), 0.1);
+            color: var(--main-color);
+            border-color: var(--main-color);
+            box-shadow: 0 0 15px rgba(var(--main-color-rgb), 0.2);
+        }
+
+        .icon-back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2.5;
+        }
+
+        /* === 页面 1: Intro View === */
+        #intro-view {
+            flex-direction: column;
+            padding: 40px;
+            justify-content: flex-start;
+            /* 改为 flex-start 防止内容过多时被裁剪 */
+            align-items: center;
+            text-align: center;
+            height: auto;
+            /* 自动高度 */
+            min-height: 100%;
+        }
+
+        #intro-view .intro-content {
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            /* 去掉 height: 100% 限制 */
+            margin: auto 0;
+            /* 垂直居中 */
+        }
+
+        #intro-view .title-section {
+            margin-bottom: 20px;
+        }
+
+        #intro-view .main-title {
+            font-size: 2.8em;
+            letter-spacing: 6px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(var(--main-color-rgb), 0.4);
+            line-height: 1.2;
+        }
+
+        #intro-view .sub-title {
+            font-size: 0.9em;
+            color: #00cccc;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        #intro-view .intro-text {
+            /* flex-grow: 1; 删除这个，防止高度异常 */
+            font-size: 0.95em;
+            line-height: 1.7;
+            color: #b0b0b0;
+            text-align: justify;
+            border-left: 2px solid rgba(var(--main-color-rgb), 0.3);
+            padding: 0 15px 0 20px;
+            margin-bottom: 20px;
+            height: auto;
+            /* 自动高度 */
+        }
+
+        .highlight {
+            color: var(--main-color);
+            font-weight: bold;
+        }
+
+        #intro-view .start-btn-container {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        #intro-view .start-btn {
+            background: transparent;
+            color: var(--main-color);
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 16px 50px;
+            border: 1px solid rgba(var(--main-color-rgb), 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #intro-view .start-btn:hover {
+            background: rgba(var(--main-color-rgb), 0.1);
+            border-color: var(--main-color);
+            box-shadow: 0 0 25px rgba(var(--main-color-rgb), 0.3);
+        }
+
+        /* === 页面 2: Selection View === */
+        #selection-view {
+            display: none;
+            padding: 30px;
+            gap: 30px;
+            height: 100%;
+            /* 填满父容器 */
+            align-items: stretch;
+        }
+
+        #selection-view.active {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            /* 固定左侧宽度 */
+            align-items: start;
+            /* 顶部对齐 */
+        }
+
+        #selection-view .sidebar {
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            /* 这里使用视口高度的百分比作为最大高度限制，防止无限延伸 */
+            max-height: 70vh;
+            min-height: 400px;
+            box-sizing: border-box;
+            padding-right: 15px;
+            position: sticky;
+            top: 20px;
+        }
+
+        #selection-view .sidebar-header {
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(var(--main-color-rgb), 0.2);
+            flex-shrink: 0;
+        }
+
+        #selection-view .options-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+            /* 防止flex子项溢出 */
+        }
+
+        #selection-view .sidebar-footer {
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        #selection-view .option-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #aaa;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+
+        #selection-view .option-btn:hover {
+            background: rgba(var(--main-color-rgb), 0.05);
+            color: #fff;
+        }
+
+        #selection-view .option-btn.active {
+            background: rgba(var(--main-color-rgb), 0.1);
+            color: var(--main-color);
+            border-left: 3px solid var(--main-color);
+            padding-left: 18px;
+        }
+
+        #selection-view .preview-panel {
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+            padding: 25px;
+            overflow: visible;
+            position: relative;
+            min-height: 400px;
+            /* 保证高度稳定，防止抖动 */
+        }
+
+        #selection-view .empty-state {
+            margin: auto;
+            text-align: center;
+            color: #666;
+            transition: opacity 0.3s;
+        }
+
+        #selection-view .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            /* 使用透明度过渡 */
+        }
+
+        #selection-view .content-area.visible {
+            opacity: 1;
+        }
+
+        #selection-view .preview-title {
+            font-size: 2em;
+            color: #fff;
+            margin: 0 0 15px 0;
+            text-shadow: 0 0 10px rgba(var(--main-color-rgb), 0.3);
+            border-bottom: 1px solid rgba(var(--main-color-rgb), 0.15);
+            padding-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        #selection-view .tags-row {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #selection-view .tag {
+            font-size: 0.8em;
+            padding: 3px 10px;
+            border: 1px solid rgba(var(--main-color-rgb), 0.25);
+            color: #00cccc;
+            background: rgba(var(--main-color-rgb), 0.03);
+            border-radius: 12px;
+        }
+
+        #selection-view .preview-text {
+            font-size: 0.95em;
+            line-height: 1.7;
+            color: #c0c0c0;
+            white-space: pre-wrap;
+            /* overflow-y: auto; 删除此行 */
+            padding-right: 10px;
+            flex-grow: 1;
+            height: auto;
+            /* 自动高度 */
+        }
+
+        #selection-view .action-row {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            /* 确保按钮不消失 */
+            min-height: 50px;
+            align-items: center;
+        }
+
+        #selection-view .enter-btn {
+            background: transparent;
+            color: var(--main-color);
+            border: 1px solid rgba(var(--main-color-rgb), 0.3);
+            padding: 10px 30px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        #selection-view .enter-btn.enabled {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #selection-view .enter-btn.enabled:hover {
+            background: rgba(var(--main-color-rgb), 0.1);
+            box-shadow: 0 0 20px rgba(var(--main-color-rgb), 0.25);
+        }
+
+        /* === 页面 3: Design View === */
+        #design-view {
+            display: none;
+            padding: 30px;
+            gap: 20px;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #design-view.active {
+            display: flex;
+        }
+
+        #design-view-back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 50;
+        }
+
+        #design-view .design-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: visible;
+            margin-top: 5px;
+            gap: 20px;
+        }
+
+        #design-view .view-header {
+            margin-bottom: 5px;
+            text-align: center;
+            padding-left: 50px;
+            /* 留出返回按钮空间 */
+            padding-right: 50px;
+        }
+
+        #design-view .view-header h2 {
+            font-size: 1.8em;
+            color: #fff;
+            margin: 0;
+        }
+
+        #design-view #origin-details {
+            margin-top: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        #design-view #origin-details summary {
+            cursor: pointer;
+            color: #00cccc;
+            font-size: 0.9em;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        #design-view #origin-details summary:hover {
+            color: #fff;
+            text-shadow: 0 0 5px #00cccc;
+        }
+
+        #design-view #origin-details-content {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(var(--main-color-rgb), 0.15);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 0.9em;
+            color: #aaa;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            text-align: left;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #design-view .form-area {
+            /* flex: 1; 取消 flex 1 */
+            overflow: visible;
+            padding-right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            height: auto;
+        }
+
+        #design-view .preview-area {
+            /* height: 180px; 取消固定高度 */
+            min-height: 180px;
+            height: auto;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            padding: 15px;
+            border-top: 1px solid rgba(var(--main-color-rgb), 0.1);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #design-view #preview-box {
+            flex-grow: 1;
+            background: #0c0e10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding: 10px;
+            overflow-y: visible;
+            /* 允许撑开 */
+            min-height: 100px;
+            margin-bottom: 10px;
+            height: auto;
+        }
+
+        .final-confirm-btn {
+            background: #008080;
+            color: #fff;
+            border: none;
+            padding: 10px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .final-confirm-btn:hover {
+            background: #00a0a0;
+            box-shadow: 0 0 15px #008080;
+        }
+
+        .final-confirm-btn:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        /* === 页面 4: World Adjust View (新增) === */
+        #world-adjust-view {
+            display: none;
+            padding: 30px;
+            gap: 20px;
+            flex-direction: column;
+        }
+
+        #world-adjust-view.active {
+            display: flex;
+        }
+
+        #world-adjust-view .view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        #world-adjust-view h2 {
+            margin: 0;
+            color: #fff;
+        }
+
+        .control-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .toggle-btn {
+            padding: 6px 15px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: #888;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toggle-btn:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .toggle-btn.active {
+            background: rgba(var(--main-color-rgb), 0.2);
+            border-color: var(--main-color);
+            color: var(--main-color);
+            box-shadow: 0 0 10px rgba(var(--main-color-rgb), 0.2);
+        }
+
+        .toggle-btn.warn.active {
+            background: rgba(255, 170, 0, 0.2);
+            border-color: var(--warn-color);
+            color: var(--warn-color);
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.2);
+        }
+
+        .toggle-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #world-content {
+            flex-grow: 1;
+            overflow-y: visible;
+            /* 允许页面滚动 */
+            padding-right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            height: auto;
+        }
+
+        .category-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            animation: fadeIn 0.4s;
+        }
+
+        .category-title {
+            font-size: 1.4em;
+            color: var(--main-color);
+            border-left: 3px solid var(--main-color);
+            padding-left: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .world-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: visible;
+            min-height: 80px;
+        }
+
+        .world-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(var(--main-color-rgb), 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(var(--main-color-rgb), 0.02);
+            z-index: 10;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--off-color);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
+            margin-top: 5px;
+        }
+
+        .world-card.enabled .status-dot {
+            background: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        .card-type {
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 状态样式 */
+        .world-card.blue-light .card-type {
+            color: var(--constant-color);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            background: rgba(0, 170, 255, 0.05);
+        }
+
+        .world-card.blue-light.enabled .status-dot {
+            background: var(--constant-color);
+            box-shadow: 0 0 8px var(--constant-color);
+        }
+
+        .world-card.green-light .card-type {
+            color: var(--success-color);
+            border: 1px solid rgba(0, 255, 157, 0.3);
+            background: rgba(0, 255, 157, 0.05);
+        }
+
+        .world-card.green-light.enabled .status-dot {
+            background: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+
+        .card-name {
+            font-size: 1em;
+            font-weight: bold;
+            color: #ddd;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .world-card:hover .card-name {
+            color: #fff;
+        }
+
+        .world-card:hover .general-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Edit Mode Styles */
+        .world-card.locked .card-name::before {
+            content: '🔒 ';
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        #world-adjust-view.edit-mode .world-card:not(.locked) {
+            cursor: pointer;
+            border-style: dashed;
+        }
+
+        #world-adjust-view.edit-mode .world-card:not(.locked):hover {
+            border-color: var(--success-color);
+            background: rgba(0, 255, 157, 0.05);
+        }
+
+        #world-adjust-view.edit-mode .world-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Unlock Mode Styles */
+        #world-adjust-view.edit-mode.unlock-mode .world-card.locked {
+            opacity: 1;
+            cursor: pointer;
+            border-style: dashed;
+            border-color: var(--warn-color);
+        }
+
+        #world-adjust-view.edit-mode.unlock-mode .world-card.locked:hover {
+            background: rgba(255, 170, 0, 0.1);
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+        }
+
+        #world-adjust-view.edit-mode.unlock-mode .world-card.locked .card-name::before {
+            content: '🔓 ';
+            color: var(--warn-color);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #111;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border: 1px solid var(--main-color);
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(var(--main-color-rgb), 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(var(--main-color-rgb), 0.05);
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1.2em;
+            color: var(--main-color);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #ccc;
+            font-family: monospace;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .world-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 15px;
+        }
+
+        /* === 手机端适配 (重写逻辑) === */
+        @media screen and (max-width: 768px) {
+
+            /* 1. 解除全局滚动锁定，允许页面自由拉长 */
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                /* 允许垂直滚动 */
+                overflow-x: hidden;
+                align-items: flex-start;
+                /* 内容从顶部开始，不要居中 */
+                padding-bottom: 50px;
+                /* 底部留白，防止按钮贴底 */
+            }
+
+            /* 2. 让主窗口随内容撑开，不再限制高度 */
+            .main-window {
+                width: 100%;
+                height: auto !important;
+                min-height: 100vh;
+                max-height: none !important;
+                overflow: visible;
+                opacity: 1 !important;
+                /* 防止动画导致的透明问题 */
+                transform: none !important;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                /* 手机端不需要玻璃背景框，直接融为一体 */
+                box-shadow: none;
+                margin-bottom: 0;
+            }
+
+            .window-deco-top,
+            .corner {
+                display: none;
+            }
+
+            .bg-animation {
+                position: fixed;
+                /* 背景固定，不随页面滚动 */
+            }
+
+            /* 3. 让视图容器自然流式排列，不再绝对定位 */
+            .view-wrapper {
+                height: auto;
+                overflow: visible;
+                padding-top: 10px;
+                display: block;
+            }
+
+            .view-container {
+                position: relative;
+                /* 改回相对定位 */
+                top: auto;
+                left: auto;
+                height: auto;
+                /* 高度自动 */
+                overflow: visible;
+                padding-bottom: 40px;
+                display: none;
+            }
+
+            .view-container.active {
+                display: flex;
+            }
+
+            /* 4. 核心：取消内部滚动条，直接撑开页面 */
+            #selection-view .options-list,
+            #selection-view .preview-text,
+            #design-view .form-area,
+            #world-content,
+            .intro-text {
+                overflow-y: visible;
+                /* 不许内部滚动了 */
+                height: auto;
+                max-height: none;
+                flex: none;
+                /* 解除 flex 伸缩限制 */
+            }
+
+            /* 5. 调整各页面布局 */
+
+            /* 步骤条 */
+            .steps-container {
+                padding: 10px 15px;
+                position: sticky;
+                /* 吸顶 */
+                top: 0;
+                background: rgba(10, 10, 12, 0.95);
+                backdrop-filter: blur(10px);
+                z-index: 100;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .step-label {
+                font-size: 0.6em;
+            }
+
+            .step-dot {
+                width: 24px;
+                height: 24px;
+                font-size: 0.8em;
+            }
+
+            /* Intro 页面特殊处理：防止被裁切 */
+            #intro-view {
+                padding: 20px;
+                height: auto;
+                min-height: auto;
+            }
+
+            /* 选择页布局 */
+            #selection-view {
+                padding: 15px;
+                display: none;
+            }
+
+            #selection-view.active {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                /* 关键修复：强制子元素拉伸，防止sidebar宽度不对 */
+                align-items: stretch;
+            }
+
+            #selection-view .sidebar {
+                position: relative;
+                /* 手机端取消 sticky */
+                top: 0;
+                /* 关键修复：确保宽度撑满，高度不塌陷 */
+                width: 100%;
+                min-height: 200px;
+                max-height: 300px;
+                /* 列表区稍微限制一下高度 */
+                overflow-y: auto !important;
+                /* 这里必须允许内部滚动，否则列表太长 */
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                padding-right: 0;
+                padding-bottom: 10px;
+            }
+
+            #selection-view .preview-panel {
+                height: auto;
+                padding: 15px;
+                overflow: visible;
+            }
+
+            #selection-view .action-row {
+                position: relative;
+                /* 确保不消失 */
+                bottom: auto;
+            }
+
+            /* 设计页布局 */
+            #design-view {
+                padding: 15px;
+            }
+
+            #design-view .preview-area {
+                position: relative;
+                height: auto;
+                min-height: 150px;
+                margin-top: 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                padding-top: 20px;
+            }
+
+            #origin-details-content {
+                width: 100%;
+                /* 宽度自适应 */
+                box-sizing: border-box;
+            }
+
+            /* 世界调整页布局 */
+            #world-adjust-view {
+                padding: 15px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .control-bar {
+                flex-wrap: wrap;
+            }
+
+            /* 评价网格手机适配 */
+            .eval-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+
+            /* 悬停浮窗手机适配 */
+            .type-card .tooltip {
+                min-width: 180px;
+                max-width: 70vw;
+                font-size: 0.75em;
+            }
+
+            .eval-label .eval-tooltip {
+                width: auto;
+                min-width: 220px;
+                max-width: 75vw;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .general-tooltip {
+                max-width: 75vw;
+            }
+        }
+    </style>
+    <script type="module">
+        // 数据更新：添加 lock_character
+        const origins = {
+            "origin_1": {
+                title: "希望的诞生-1.0",
+                content: `作为一个即将步入高中的学生，面对觉醒仪，决定自己未来的道路吧。\n\n——顺带一提，排在你前面的那个女生，也就是刚刚被验出觉醒的那位，似乎可能是你未来的同学？`,
+                tags: ["校园", "异能二中", "通用", "适合第一次游玩"],
+                ranks: ["一等"],
+                note: null,
+                lock_character: ["顾思萤"]
+            },
+            "origin_2": {
+                title: "突来的羁绊",
+                content: `《刚成为异能者进入异能高校的我碰巧撞上牵了手就认为要私定终生的道姑并意外和她牵了手莫名其妙成了她的道侣这回事》——呼，好长的一句话。\n\n总之，《刚……这回事》堂堂连载中！`,
+                tags: ["校园", "恋爱喜剧"],
+                ranks: ["一等"],
+                note: null,
+                lock_character: ["云水谣", "安若灵"]
+            },
+            "origin_3": {
+                title: "奏响的狂乐",
+                content: `不管你是这支乐队的粉丝，还是恰好路过的路人……\n总之，看起来你是被卷入了一场事故了——\n什么叫“那个身材超棒的大姐姐主唱看到空间裂缝出现之后，拉着大家一起冲上去了”？`,
+                tags: ["通用"],
+                ranks: ["零等", "一等", "二等", "三等", "四等"],
+                note: null,
+                lock_character: ["言奏火"]
+            },
+            "origin_4": {
+                title: "末日的独舞",
+                content: `好了，嘻嘻哈哈的内容到此为止，这个介入点可是非常正经的。\n作为较为罕见的，异能能够独当一面的协会成员，来到格陵兰岛，清扫一个小型空间隧道吧！\n……然后，面临这颗星球总共也就见过三次的，“超大型空间隧道”，“深渊之门”的打开吧。\n值得幸运的是，“深渊之门”没有开在闹市区。\n不幸的是，“深渊之门”方圆数十里，恐怕只有你一个人类。\n活下去吧。`,
+                tags: ["协会成员", "战斗"],
+                ranks: ["二等", "三等"],
+                note: "应当是比较全能，可以独当一面的异能",
+                lock_character: []
+            },
+            "origin_5": {
+                title: "无光的利刃",
+                content: `异能特殊的你，依稀还记得那个“被全世界遗忘”的朋友。\n你不清楚他为什么消失了，你只记得，在消失之前，他笑着说：“我要去异能者协会总部啦！”\n之后，除了你之外，身边再也没有人记得他。\n直到那一天出现，自称“揭露者”的人找上了你，邀请你一同“戳破异能者协会”的秘密。\n你进入了异能者协会，发奋图强，不要命地一般战斗着……\n然而，未等你探寻到情报，挑战来临了。\n林静澜——这个异能者协会的会长，来到了你所在的战场。\n好巧不巧地，你是这片小战场中，地位最高的人。\n直面她吧。`,
+                tags: ["反对组织成员", "间谍"],
+                ranks: ["二等", "三等"],
+                note: "必须填写故事背景；必须是能以某种形式'察觉到记忆/现实被修改的异能'，建议为阿波罗型；不建议填写身份设定（因为默认有）。注意，你是揭露者在异能者协会的**间谍**。",
+                lock_character: ["卫荆寻", "艾莉"]
+            },
+            "origin_6": {
+                title: "被囚的圣女",
+                content: `世界上总有人是“干脏活”的——虽然你觉得你的工作其实也不算多“脏”啦，只是要保护好隐私而已。\n“魔王教”——这是你处理的对象。这玩意就和传销组织一样，清完一片会自动再长出来一片。名字也好像是什么“通用诈骗组织名”。\n总之，你负责处理那些“隐藏得特别好，跑得特别快，规模偏偏又不大”的魔王教——简而言之就是间谍啦。\n这次也不例外。\n看着看台上那个眼神空洞的被囚“圣女”，你下定决心要把她救出来。\n……真的眼神空洞吗？`,
+                tags: ["协会成员", "魔王教", "间谍"],
+                ranks: ["二等", "三等"],
+                note: "建议选择那种不容易被看出来的异能，毕竟你在做潜入工作",
+                lock_character: ["棉悠悠", "尚言"]
+            },
+            "origin_7": {
+                title: "英雄的摇篮",
+                content: `功成身退。\n受了伤的你没法再呆在前线了，于是告辞还乡，报名了当地的异能高中想要当老师。\n退休（相对而言）生活应该会比较轻松吧？\n对吧？`,
+                tags: ["协会成员", "教师"],
+                ranks: ["三等", "四等"],
+                note: "这个开局的背景为受伤退役，建议对应地编一下背景信息",
+                lock_character: ["月见萤", "熊岳山", "陆沉渊", "顾思萤", "楚天歌", "皇甫刹那", "夏咏星", "云水谣", "安若灵"]
+            },
+            "origin_8": {
+                title: "世界之巅",
+                content: `五等异能者——这是当今异能体系的顶峰。\n不管你是隐世修行，还是方才突破……总之，你走上了这个层次。\n来吧，接受协会顶峰的那一批人的加冕吧。`,
+                tags: ["协会成员", "五等异能者"],
+                ranks: ["五等"],
+                note: "建议编一下背景信息：你是怎么进入高层视野的？从一等异能者慢慢晋升的？还是隐世修行的大能？亦或是随便什么东西？",
+                lock_character: []
+            },
+            "origin_9": {
+                title: "重生的废墟",
+                content: `异能十二中——这是一个被“搁置”的番号。\n在澳洲的深渊之门爆发时，异能十二中的全体师生用血肉护送平民离开了这里，但异能十二中也因此毁灭。\n如今，得到了调令的你，再度踏上了这篇废土，准备让这个番号重归辉煌。`,
+                tags: ["重建", "校长", "建议使用带记忆的插件"],
+                ranks: ["三等", "四等"],
+                note: "身份建议写为“异能者协会相关身份”。",
+                lock_character: []
+            },
+            "origin_10": {
+                title: "希望的诞生-2.0",
+                content: `体验了二中生活这么久，也该碰点别的东西了吧？——来试试一个氛围完全不同，同学们也完全不同的学校如何？\n重视实战的校风，成天死鱼眼的校长，\n被称为“校园王子”的学姐，\n恋爱多次但从未开始的倒霉蛋，\n大大咧咧的假小子，\n外表冷漠的高冷女神，\n爱好女装的卷王伪娘……\n绝对是不一样的体验。`,
+                tags: ["校园", "异能一中", "通用", "适合第一次游玩"],
+                ranks: ["一等"],
+                note: null,
+                lock_character: ["叶洛洛", "祝小安", "沈星辰", "白凝霜", "鹿鸣", "柳清鸢"]
+            },
+            "origin_11": {
+                title: "无光的利刃-2.0",
+                content: `揭露者是一个反对组织。也是一个内部气氛总是比较低沉的组织——毕竟他们的使命是“揭穿异能者协会的面纱”……\n——在一般人的眼里是这样的。\n毕竟，谁能想到，这种组织的内部竟然会有一个不着调的家伙呢？`,
+                tags: ["反对组织", "普通成员", "欢乐向，但也不一定"],
+                ranks: ["二等", "三等"],
+                note: "必须填写故事背景；必须是能以某种形式'察觉到记忆/现实被修改的异能'，建议为阿波罗型；不建议填写身份设定（因为默认有）。注意，你是揭露者的**普通成员**，不是间谍。",
+                lock_character: ["卫荆寻", "艾莉"]
+            },
+            "origin_12": {
+                title: "协会的力量(NEW)",
+                content: `从异能高中毕业了一个半月，你来到了异能者协会，成为了一名新的协会成员。\n不管是人数最多的战斗部，还是远离战场的研究部，又或是管理觉醒仪式以及异能高中的觉醒部，再或者神秘的情报部，以及主管一切后勤的后勤部——你的选择是什么呢？\n——顺带一提，类似纪委角色的内务部不能选，也许之后再出吧，先咕咕咕了。`,
+                tags: ["异能者协会", "普通成员", "通用"],
+                ranks: ["二等", "三等"],
+                note: "设定上，你刚从异能高中毕业了一个半月。",
+                lock_character: []
+            },
+            "origin_13": {
+                title: "协会的力量-战斗部(NEW)",
+                content: `战斗部！异能者协会人数最多的部门！\n……貌似没什么好解释的了。`,
+                tags: ["异能者协会", "普通成员", "战斗部", "欢乐向？"],
+                ranks: ["二等", "三等"],
+                note: "设定上，你刚从异能高中毕业了一个半月。而且既然你加入了战斗部，异能能打和会用装备之间总得有一个吧？",
+                lock_character: ["严镇海", "周炫"]
+            },
+            "origin_14": {
+                title: "协会的力量-情报部(NEW)",
+                content: `情报部——异能者协会最“神秘”（或许吧）的部门。\n监控战场动态，调查清除反对派，控制舆情……\n嘛，总之就是这样？`,
+                tags: ["异能者协会", "普通成员", "情报部"],
+                ranks: ["二等", "三等"],
+                note: "设定上，你刚从异能高中毕业了一个半月。而且既然你加入了情报部，那至少得有点情报收集能力或者异能有相关吧？",
+                lock_character: ["纪云音", "百变"]
+            },
+            "origin_15": {
+                title: "自定义",
+                content: `觉得这些结局都不满意？\n嘛……那就自定义吧？\n(NEW)新写了好几个异能高中，可以看一下世界书里面的“机构总览”，挑一个喜欢的。建议使用记忆插件，毕竟除了一中和二中，其它的异能高中都只有一个简要介绍。`,
+                tags: ["自定义"],
+                ranks: ["零等", "一等", "二等", "三等", "四等", "五等", "六等"],
+                note: "既然你都选择自定义了，你应该也知道该写什么了：背景故事！\n顺带一提，如果你想选一些没有异能天赋的人的开局，那就在异能名称和异能描述里面写“无天赋”吧。",
+                lock_character: []
+            }
+        };
+
+        let selectedOriginKey = null;
+        let selectedPowerType = null;
+        let currentStep = 0;
+        let isEditMode = false;
+        let isUnlockMode = false;
+        let currentBookName = '';
+        let pendingCharInfo = ''; // 暂存的角色信息
+
+        // 步骤状态: 0=Intro, 1=Origin, 2=Design, 3=World
+        const steps = ['intro-view', 'selection-view', 'design-view', 'world-adjust-view'];
+
+        // 切换视图
+        function switchView(targetViewId) {
+            // 找到索引
+            const idx = steps.indexOf(targetViewId.replace('#', ''));
+            if (idx !== -1) {
+                currentStep = idx;
+                updateStepsUI(idx);
+            }
+            $('.view-container').removeClass('active');
+            $(targetViewId).addClass('active');
+        }
+
+        // 更新进度条 UI
+        function updateStepsUI(index) {
+            $('.step-item').removeClass('active completed');
+            for (let i = 0; i < 4; i++) {
+                if (i < index) $(`.step-item[data-step="${i}"]`).addClass('completed');
+                if (i === index) $(`.step-item[data-step="${i}"]`).addClass('active');
+            }
+        }
+
+        // 更新第二页预览
+        function updateSelectionPreview(key) {
+            selectedOriginKey = key;
+            const data = origins[key];
+
+            // 修复抖动问题：不隐藏整个 content-area，而是使用透明度淡入淡出
+            const $contentArea = $('#selection-view .content-area');
+            $contentArea.removeClass('visible');
+
+            setTimeout(() => {
+                $('#selection-view .preview-title').text(data.title);
+                $('#selection-view .preview-text').text(data.content);
+                $('#tags-container').html(data.tags.map(t => `<span class="tag">${t}</span>`).join(''));
+                $('#selection-view .empty-state').hide();
+
+                // 强制显示容器（如果之前是display:none的话），然后加 visible class
+                $contentArea.css('display', 'flex').addClass('visible');
+                $('#selection-view .enter-btn').addClass('enabled');
+            }, 300);
+        }
+
+        // 根据介入点更新设计页选项
+        function updateDesignViewForOrigin(key) {
+            const data = origins[key];
+            const $rankSelect = $('#power-rank');
+            $rankSelect.empty();
+            data.ranks.forEach(rank => {
+                $rankSelect.append(`<option value="${rank}">${rank}</option>`);
+            });
+            const $noteBtn = $('#special-note-btn');
+            const $noteBox = $('#special-note-box');
+            $noteBox.text(data.note || "");
+            if (data.note) {
+                $noteBtn.addClass('active').prop('title', '点击查看特别备注');
+                $noteBtn.css('pointer-events', 'auto');
+                $noteBox.show();
+            } else {
+                $noteBtn.removeClass('active').prop('title', '无特别备注');
+                $noteBtn.css('pointer-events', 'none');
+                $noteBox.hide();
+            }
+        }
+
+        // 更新第三页预览
+        function updateDesignPreview() {
+            let yamlString = "<character_info character=\"<user>\">\n<user>:\n";
+            const powerName = $('#power-name').val();
+            const powerDesc = $('#power-desc').val();
+
+            yamlString += "  异能:\n";
+            yamlString += `    名称: ${powerName || ''}\n`;
+            yamlString += `    类型: ${selectedPowerType || ''}\n`;
+            yamlString += `    阶位: ${$('#power-rank').val() || ''}\n`;
+            yamlString += `    描述: |\n      ${(powerDesc || '').replace(/\n/g, '\n      ')}\n`;
+
+            // 收集多维评价
+            const evalDims = ['破坏力', '防护性', '持续性', '精密度', '功能性', '射程范围'];
+            const evalIds = ['eval-destruction', 'eval-defense', 'eval-persistence', 'eval-precision', 'eval-versatility', 'eval-range'];
+            const evalLines = [];
+            for (let i = 0; i < evalDims.length; i++) {
+                const rating = $(`#${evalIds[i]}`).val().trim();
+                if (!rating) continue;
+                const note = $(`#${evalIds[i]}-note`).val().trim();
+                const line = note ? `${evalDims[i]}：${rating}，${note}` : `${evalDims[i]}：${rating}`;
+                evalLines.push(line);
+            }
+            if (evalLines.length > 0) {
+                yamlString += `    多维评价: |\n      ${evalLines.join('\n      ')}\n`;
+            }
+
+            let gender = $('#char-gender-select').val();
+            if (gender === 'custom') { gender = $('#char-gender-custom').val(); }
+
+            let appearance = $('#char-appearance').val();
+            const subAppearance = [];
+            if ($('#char-app-vibe').val()) subAppearance.push(`气质: ${$('#char-app-vibe').val()}`);
+            if ($('#char-app-hair').val()) subAppearance.push(`头发: ${$('#char-app-hair').val()}`);
+            if ($('#char-app-face').val()) subAppearance.push(`脸部: ${$('#char-app-face').val()}`);
+            if ($('#char-app-body').val()) subAppearance.push(`体型: ${$('#char-app-body').val()}`);
+            if ($('#char-app-skin').val()) subAppearance.push(`皮肤: ${$('#char-app-skin').val()}`);
+            if (subAppearance.length > 0) { appearance = subAppearance.join('\n'); }
+
+            const optionals = {
+                姓名: $('#char-name').val(),
+                年龄: $('#char-age').val(),
+                性别: gender,
+                身份: $('#char-identity').val(),
+                背景: $('#char-background').val(),
+                性格: $('#char-personality').val(),
+                外貌: appearance
+            };
+
+            const filledOptionals = Object.entries(optionals).filter(([_, value]) => value && value.trim() !== '');
+            if (filledOptionals.length > 0) {
+                yamlString += "  档案:\n";
+                filledOptionals.forEach(([key, value]) => {
+                    if (value.includes('\n')) {
+                        yamlString += `    ${key}: |\n      ${value.replace(/\n/g, '\n      ')}\n`;
+                    } else {
+                        yamlString += `    ${key}: ${value}\n`;
+                    }
+                });
+            }
+            yamlString += "</character_info>";
+            $('#preview-box').text(yamlString);
+
+            // 更新按钮状态，但现在这个按钮是"下一步"
+            $('#design-next-btn').prop('disabled', !powerName || !powerDesc || !selectedPowerType);
+        }
+
+        // === 世界调整相关逻辑 (第四页) ===
+
+        async function renderWorldAdjust() {
+            const $content = $('#world-content');
+            $content.empty();
+
+            // 获取世界书名称
+            const bookInfo = window.getCharWorldbookNames ? getCharWorldbookNames('current') : { primary: null, additional: [] };
+            currentBookName = bookInfo.primary || (bookInfo.additional && bookInfo.additional[0]);
+
+            if (!currentBookName) {
+                $content.html('<div style="text-align:center; color:#888;">未找到绑定的世界书</div>');
+                return;
+            }
+
+            let entries = [];
+            try {
+                entries = await getWorldbook(currentBookName);
+            } catch (e) {
+                console.error(e);
+                $content.html('<div style="text-align:center; color:#888;">读取世界书失败</div>');
+                return;
+            }
+
+            // 获取当前选中介入点的强制锁定列表
+            const currentOrigin = origins[selectedOriginKey];
+            const forcedLockedChars = currentOrigin ? (currentOrigin.lock_character || []) : [];
+
+            // 过滤条目：[Character] 或 [*Character] 开头，排除 [Character] user
+            const filteredEntries = entries.filter(e => {
+                const name = e.name || '';
+                return (name.startsWith('[Character]') || name.startsWith('[*Character]')) && name !== '[Character] user';
+            });
+
+            if (filteredEntries.length > 0) {
+                const $section = $(`<div class="category-section"></div>`);
+                $section.append(`<div class="category-title">角色组件开关</div>`);
+                const $grid = $(`<div class="cards-grid"></div>`);
+
+                filteredEntries.forEach(entry => {
+                    const cleanName = entry.name.replace(/^\[\*?Character\]\s*/, '').trim();
+                    // 核心逻辑：原有带星号的 OR 在强制锁定列表里的，都视为锁定
+                    const isLocked = entry.name.startsWith('[*Character]') || forcedLockedChars.includes(cleanName);
+
+                    const isBlue = entry.strategy.type === 'constant';
+                    const lightClass = isBlue ? 'blue-light' : 'green-light';
+                    const typeText = isBlue ? 'Constant' : 'Selective';
+                    const keysText = "触发词:\n" + entry.strategy.keys.join('\n') + (isLocked ? "\n\n⚠️ 核心条目，不建议关闭" : "");
+                    const enabledClass = entry.enabled ? 'enabled' : '';
+                    const lockedClass = isLocked ? 'locked' : '';
+
+                    const $card = $(`
+                        <div class="world-card ${lightClass} ${enabledClass} ${lockedClass}" data-uid="${entry.uid}" data-locked="${isLocked}">
+                            <div class="card-header">
+                                <div class="status-dot"></div>
+                                <div class="card-type">${typeText}</div>
+                            </div>
+                            <div class="card-name">${cleanName}</div>
+                            <div class="general-tooltip">${keysText}</div>
+                        </div>
+                    `);
+
+                    $card.on('click', (e) => handleCardClick(e, entry, $card));
+                    $grid.append($card);
+                });
+                $section.append($grid);
+                $content.append($section);
+            } else {
+                $content.html('<div style="text-align:center; color:#888; margin-top:50px;">未在世界书中找到可选的 [Character] 组件</div>');
+            }
+
+            // 添加底部最终确认按钮
+            const $footer = $(`<div class="world-footer"></div>`);
+            const $confirmBtn = $(`<button id="final-confirm" class="final-confirm-btn">确认并写入</button>`);
+            $confirmBtn.on('click', handleFinalConfirm);
+            $footer.append($confirmBtn);
+            $content.append($footer);
+        }
+
+        async function handleCardClick(e, entry, $card) {
+            if (!isEditMode) {
+                // 非编辑模式，只看详情
+                $('#modal-title').text(entry.name);
+                $('#modal-body').text(entry.content);
+                $('#modal-overlay').addClass('active');
+                return;
+            }
+
+            const isLockedItem = $card.data('locked');
+            if (isLockedItem && !isUnlockMode) {
+                $card.addClass('shake');
+                setTimeout(() => $card.removeClass('shake'), 300);
+                toastr.warning("该条目为核心设定，需解锁后修改");
+                return;
+            }
+
+            // 修改逻辑
+            let nextType = entry.strategy.type;
+            let nextEnabled = entry.enabled;
+
+            if (!entry.enabled) {
+                nextType = 'constant';
+                nextEnabled = true;
+            } else if (entry.strategy.type === 'constant') {
+                nextType = 'selective';
+                nextEnabled = true;
+            } else {
+                nextEnabled = false;
+            }
+
+            // UI更新
+            $card.removeClass('blue-light green-light enabled');
+            if (nextEnabled) {
+                $card.addClass('enabled');
+                $card.addClass(nextType === 'constant' ? 'blue-light' : 'green-light');
+            } else {
+                $card.addClass(nextType === 'constant' ? 'blue-light' : 'green-light');
+            }
+            const typeText = nextType === 'constant' ? 'Constant' : 'Selective';
+            $card.find('.card-type').text(typeText);
+
+            // 更新引用
+            entry.enabled = nextEnabled;
+            entry.strategy.type = nextType;
+
+            // 写入
+            try {
+                await updateWorldbookWith(currentBookName, entries => {
+                    const target = entries.find(e => e.uid === entry.uid);
+                    if (target) {
+                        target.enabled = nextEnabled;
+                        target.strategy.type = nextType;
+                    }
+                    return entries;
+                }, { render: 'debounced' });
+            } catch (err) {
+                console.error("Update failed", err);
+                toastr.error("修改失败，请重试");
+            }
+        }
+
+        // 最终确认：写入角色卡信息并跳转
+        async function handleFinalConfirm() {
+            const $btn = $('#final-confirm');
+            $btn.text("数据同步中...").prop('disabled', true);
+
+            try {
+                // 1. 写入 [Character] user (来自 pendingCharInfo)
+                if (currentBookName && pendingCharInfo) {
+                    await updateWorldbookWith(currentBookName, entries => {
+                        const entryName = '[Character] user';
+                        const idx = entries.findIndex(e => e.name === entryName);
+                        const newEntryData = {
+                            keys: ['user', '我', '自己'],
+                            name: entryName,
+                            content: pendingCharInfo,
+                            enabled: true,
+                            position: { type: 'before_character_definition', order: 300 }
+                        };
+
+                        if (idx >= 0) {
+                            entries[idx] = { ...entries[idx], ...newEntryData };
+                        } else {
+                            entries.push(newEntryData);
+                        }
+                        return entries;
+                    });
+                    console.log(`已将角色信息写入世界书: ${currentBookName}`);
+                }
+
+                // 2. 跳转
+                const swipeId = parseInt(selectedOriginKey.split('_')[1]);
+                if (!isNaN(swipeId)) {
+                    await setChatMessages([{ message_id: 0, swipe_id: swipeId }], { refresh: 'all' });
+                    $btn.text("剧情载入完毕");
+                } else {
+                    $btn.text("载入失败");
+                    $btn.prop('disabled', false);
+                }
+
+            } catch (e) {
+                console.error("确认构筑失败:", e);
+                toastr.error("构筑过程发生错误，请查看控制台。");
+                $btn.text("发生错误").prop('disabled', false);
+            }
+        }
+
+        // === 悬停浮窗视口边界检测 ===
+        // 确保所有浮窗始终在视口内完整显示，不会被截断
+        function setupTooltipBoundaries() {
+            const margin = 8; // 与视口边缘的最小间距
+
+            // 调整浮窗位置，防止溢出视口
+            function adjustTooltip($tooltip) {
+                if (!$tooltip.length || !$tooltip[0]) return;
+                const rect = $tooltip[0].getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+
+                let shiftX = 0;
+                let shiftY = 0;
+
+                // 水平溢出检测
+                if (rect.left < margin) {
+                    shiftX = margin - rect.left;
+                } else if (rect.right > vw - margin) {
+                    shiftX = (vw - margin) - rect.right;
+                }
+
+                // 垂直溢出检测
+                if (rect.top < margin) {
+                    shiftY = margin - rect.top;
+                } else if (rect.bottom > vh - margin) {
+                    shiftY = (vh - margin) - rect.bottom;
+                }
+
+                // 应用偏移（叠加在 CSS 的 translateX(-50%) 之上）
+                if (shiftX !== 0 || shiftY !== 0) {
+                    $tooltip.css('transform', `translateX(calc(-50% + ${shiftX}px)) translateY(${shiftY}px)`);
+                }
+            }
+
+            // 重置浮窗位置
+            function resetTooltip($tooltip) {
+                if ($tooltip.length) {
+                    $tooltip.css('transform', '');
+                }
+            }
+
+            // 辅助：延迟执行（等待 CSS transition 使浮窗可见并完成布局）
+            function onShow($trigger, $tooltip) {
+                if (!$tooltip.length) return;
+                // 使用 setTimeout 确保 visibility/opacity 已生效
+                setTimeout(() => adjustTooltip($tooltip), 50);
+            }
+
+            // --- type-card 异能类型卡片浮窗 ---
+            $(document).on('mouseenter', '.type-card', function () {
+                onShow($(this), $(this).find('.tooltip'));
+            });
+            $(document).on('mouseleave', '.type-card', function () {
+                resetTooltip($(this).find('.tooltip'));
+            });
+
+            // --- eval-label 多维评价浮窗 ---
+            $(document).on('mouseenter', '.eval-label', function () {
+                onShow($(this), $(this).find('.eval-tooltip'));
+            });
+            $(document).on('mouseleave', '.eval-label', function () {
+                resetTooltip($(this).find('.eval-tooltip'));
+            });
+
+            // --- world-card 世界卡片通用浮窗 ---
+            $(document).on('mouseenter', '.world-card', function () {
+                onShow($(this), $(this).find('.general-tooltip'));
+            });
+            $(document).on('mouseleave', '.world-card', function () {
+                resetTooltip($(this).find('.general-tooltip'));
+            });
+        }
+
+        async function init() {
+            setTimeout(() => $('.main-window').css({ 'opacity': '1', 'transform': 'translateY(0)' }), 100);
+            switchView('#intro-view');
+            setupTooltipBoundaries();
+
+            // 绑定事件
+            $('#start-btn').on('click', () => switchView('#selection-view'));
+            $('#selection-back-btn').on('click', () => switchView('#intro-view'));
+
+            $('#selection-view .option-btn').on('click', function () {
+                $('#selection-view .option-btn').removeClass('active');
+                $(this).addClass('active');
+                updateSelectionPreview($(this).data('key'));
+            });
+
+            $('#selection-view .enter-btn').on('click', function () {
+                if (!selectedOriginKey) return;
+                const originData = origins[selectedOriginKey];
+                $('#origin-details-summary').text(`查看介入点描述: ${originData.title}`);
+                $('#origin-details-content').text(originData.content);
+                $('#origin-details').removeAttr('open');
+                updateDesignViewForOrigin(selectedOriginKey);
+                switchView('#design-view');
+                updateDesignPreview();
+            });
+
+            $('#design-view-back-btn').on('click', () => switchView('#selection-view'));
+
+            $('.type-card').on('click', function () {
+                $('.type-card').removeClass('active');
+                $(this).addClass('active');
+                selectedPowerType = $(this).data('type');
+                updateDesignPreview();
+            });
+
+            $('#special-note-btn').on('click', function () {
+                if ($(this).hasClass('active')) {
+                    $('#special-note-box').slideToggle();
+                }
+            });
+
+            $('#char-gender-select').on('change', function () {
+                if ($(this).val() === 'custom') {
+                    $('.gender-row').addClass('custom-mode');
+                    $('#char-gender-custom').focus();
+                } else {
+                    $('.gender-row').removeClass('custom-mode');
+                }
+                updateDesignPreview();
+            });
+
+            $('#detail-toggle-btn').on('click', function () {
+                $('#appearance-sub-fields').toggleClass('open');
+            });
+
+            $('#design-view .form-area').on('input', 'input, textarea, select', updateDesignPreview);
+
+            // === 第三页 -> 第四页 逻辑 ===
+            $('#design-next-btn').on('click', async function () {
+                // 保存当前生成的文本
+                pendingCharInfo = $('#preview-box').text();
+                // 渲染第四页
+                await renderWorldAdjust();
+                switchView('#world-adjust-view');
+            });
+
+            // === 第四页 逻辑 ===
+            $('#world-adjust-back-btn').on('click', () => switchView('#design-view'));
+
+            $('#toggle-edit-mode').on('click', function () {
+                isEditMode = !isEditMode;
+                $(this).toggleClass('active');
+                $('#world-adjust-view').toggleClass('edit-mode');
+
+                if (!isEditMode) {
+                    isUnlockMode = false;
+                    $('#toggle-unlock-mode').removeClass('active').prop('disabled', true);
+                    $('#world-adjust-view').removeClass('unlock-mode');
+                    $(this).html('⚡ 启用编辑');
+                } else {
+                    $('#toggle-unlock-mode').prop('disabled', false);
+                    $(this).html('⚡ 退出编辑');
+                }
+            });
+
+            $('#toggle-unlock-mode').on('click', function () {
+                if (!isEditMode) return;
+                isUnlockMode = !isUnlockMode;
+                $(this).toggleClass('active');
+                $('#world-adjust-view').toggleClass('unlock-mode');
+                $(this).html(isUnlockMode ? '🔓 锁定核心' : '🔒 解除锁定');
+            });
+
+            // Modal
+            $('#modal-close').on('click', () => $('#modal-overlay').removeClass('active'));
+            $('#modal-overlay').on('click', (e) => {
+                if (e.target.id === 'modal-overlay') $('#modal-overlay').removeClass('active');
+            });
+
+            updateDesignPreview();
+        }
+        $(errorCatched(init));
+    
+$('#system-select .type-card').on('click', function(){
+  $('#system-select .type-card').removeClass('active');
+  $(this).addClass('active');
+  if($(this).data('system')==='jujutsu'){
+    $('#esper-form,.form-group:has(#power-name),.form-group:has(#power-desc),.form-group:has(#power-rank)').hide();
+    $('#jujutsu-form').show();
+  } else {
+    $('#jujutsu-form').hide();
+    $('#esper-form,.form-group:has(#power-name),.form-group:has(#power-desc),.form-group:has(#power-rank)').show();
+  }
+});
+
+const JUTSU_POOL=['十种影法术','赤血操术','无下限咒术','咒灵操术','投射咒法','黑鸟操术','不义游戏','星之怒','十划咒法','审判','无为转变','冰凝咒法','雷击咒法','风镰咒术','影缚术','念动力','植物操控','空间折叠','时间迟滞','灵魂感知','梦境入侵','金属塑形','五行咒法','乱空','天之伤疮','天狩术式','天魔变','奏恶灭音','全知之书','原色光','杀意之光','洞悉咒法','溶解操术','缚骨裁衣','巧匠','无我法相','因果逆转','情报术者','武极','滥觞','茶道','贪饕术式'];
+$('#random-jutsu-btn').on('click',function(){
+  let r=JUTSU_POOL[Math.floor(Math.random()*JUTSU_POOL.length)];
+  $('#jujutsu-random-result').html('<strong>抽取结果：'+r+'</strong><br><small>已填入术式名称，可自行修改描述</small>').show();
+  $('#jujutsu-name').val(r).show();
+  $('#jujutsu-desc').show();
+  $('#custom-jutsu-btn').removeClass('active');
+  $(this).addClass('active');
+});
+$('#custom-jutsu-btn').on('click',function(){
+  $('#jujutsu-random-result').hide();
+  $('#jujutsu-name').val('').show();
+  $('#jujutsu-desc').show();
+  $(this).addClass('active');
+  $('#random-jutsu-btn').removeClass('active');
+});
+</script>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+    <div class="main-window">
+        <div class="window-deco-top"></div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <!-- 顶部进度条 -->
+        <div class="steps-container">
+            <div class="step-list">
+                <div class="step-item active" data-step="0">
+                    <div class="step-dot">1</div>
+                    <div class="step-label">开幕</div>
+                </div>
+                <div class="step-item" data-step="1">
+                    <div class="step-dot">2</div>
+                    <div class="step-label">抉择</div>
+                </div>
+                <div class="step-item" data-step="2">
+                    <div class="step-dot">3</div>
+                    <div class="step-label">构筑</div>
+                </div>
+                <div class="step-item" data-step="3">
+                    <div class="step-dot">4</div>
+                    <div class="step-label">调整</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 视图容器包裹层 -->
+        <div class="view-wrapper">
+            <!-- 视图1: 介绍页 -->
+            <div id="intro-view" class="view-container active">
+                <div class="intro-content">
+                    <div class="title-section">
+                        <h1 class="main-title">新纪元档案</h1>
+                        <div class="sub-title">New Era Archives: Confidential</div>
+                    </div>
+                    <div class="intro-text">
+                        <p>你好，我是 <span
+                                class="highlight">Polin</span>，感谢游玩这张角色卡。如你所见，这是一张以“异能”为主题的角色卡，非要说的话更偏向“幻想异能”而非“都市异能”。这是一个我更新了许久的角色卡（虽然内容依旧不是很多啦），大概是算得上完整了。<br>世界观也很简单：
+                        </p>
+                        <p>这个世界的地球，在20年前发生了一起<span class="highlight">“大冲击”</span>，世界上出现了各种“空间隧道”，里面会不断地冒出被称作<span
+                                class="highlight">“魔兽”</span>的，不知为何具有原始的杀戮本能的生物。幸好，人类在同时也从“大冲击”中获得了“灵力”，觉醒了<span
+                                class="highlight">“异能”</span>，并联合起来组建了地球政府（真是美好的世界），成立了异能者协会，来与魔兽抗衡。</p>
+                        <p>20年以来，空间隧道不断打开，魔兽不断变多，但人类的实力也不断增长，秩序也逐渐稳定了下来，世界政府与异能者协会的统治被证明是光明且有效的。如今更是有被称作“新纪元的守护之剑”的异能者协会会长，年仅25岁就达到了五等异能者——也就是最高等级，看起来一切都极其向好。
+                        </p>
+                        <p>然而，空间隧道的开启似乎是无穷无尽的。魔兽的出现也没个尽头。20年前进入空间隧道的异能者协会长老也仍然未归……世界政府与异能者协会的统治下，也有反对势力抬头。<span
+                                class="highlight">“揭露者”</span>虽然同样守护人类，但异能者协会的无数秘密却让他们极为不满。更有甚者，打着“永生”“复活”的名义组建邪教招揽信众以搜刮财富……
+                        </p>
+                        <p>你能改变这一切吗？往哪个方向？终结乱世？还是为所欲为？<br><span class="highlight">拭目以待。</span></p>
+                    </div>
+                    <div class="start-btn-container"><button id="start-btn" class="start-btn">建立神经连接</button></div>
+                </div>
+            </div>
+
+            <!-- 视图2: 选择页 -->
+            <div id="selection-view" class="view-container">
+                <div class="sidebar">
+                    <div class="sidebar-header">选择命运介入点</div>
+                    <div class="options-list">
+                        <div class="option-btn" data-key="origin_1">希望的诞生(1.0)</div>
+                        <div class="option-btn" data-key="origin_2">突来的羁绊</div>
+                        <div class="option-btn" data-key="origin_3">奏响的狂乐</div>
+                        <div class="option-btn" data-key="origin_4">末日的独舞</div>
+                        <div class="option-btn" data-key="origin_5">无光的利刃(1.0)</div>
+                        <div class="option-btn" data-key="origin_6">被囚的圣女</div>
+                        <div class="option-btn" data-key="origin_7">英雄的摇篮</div>
+                        <div class="option-btn" data-key="origin_8">世界之巅</div>
+                        <div class="option-btn" data-key="origin_9">重生的废墟</div>
+                        <div class="option-btn" data-key="origin_10">希望的诞生(2.0)</div>
+                        <div class="option-btn" data-key="origin_11">无光的利刃(2.0)</div>
+                        <div class="option-btn" data-key="origin_12">协会的力量-通用</div>
+                        <div class="option-btn" data-key="origin_13">协会的力量-战斗部</div>
+                        <div class="option-btn" data-key="origin_14">协会的力量-情报部</div>
+                        <div class="option-btn" data-key="origin_15">自定义</div>
+                    </div>
+                    <div class="sidebar-footer">
+                        <button id="selection-back-btn" class="icon-back-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M19 12H5M12 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-panel">
+                    <div class="empty-state">
+                        <h2>AWAITING SELECTION</h2>
+                        <p style="font-size:0.8em;opacity:0.5">请从左侧选择一个命运节点</p>
+                    </div>
+                    <div class="content-area">
+                        <h1 class="preview-title"></h1>
+                        <div id="tags-container" class="tags-row"></div>
+                        <div class="preview-text"></div>
+                        <div class="action-row"><button class="enter-btn">进入构筑 ></button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图3: 设计页 -->
+            <div id="design-view" class="view-container">
+                <!-- 左上角返回按钮 -->
+                <button id="design-view-back-btn" class="icon-back-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <div class="view-header">
+                    <h2>角色数据构筑</h2>
+                    <details id="origin-details">
+                        <summary id="origin-details-summary">查看介入点描述</summary>
+                        <div id="origin-details-content"></div>
+                    </details>
+                </div>
+                <div class="design-content">
+                    <!-- 上半部分：表单区 -->
+                    <div class="form-area">
+                        <fieldset class="form-fieldset">
+                            <legend class="form-legend">
+                                核心能力档案
+                                <div id="special-note-btn" class="note-btn">?</div>
+                            </legend>
+                            <div id="special-note-box" class="special-note-box"></div>
+
+                            <!-- 力量体系选择 -->
+                            <div class="form-group">
+                                <label>力量体系<span class="mandatory-star">*</span></label>
+                                <div class="type-cards" id="system-select">
+                                    <div class="type-card active" data-system="esper" style="flex:1">灵力·异能<div class="tooltip">协会登记体系。灵力回路闭环→觉醒异能→五型分类→等阶评级。</div></div>
+                                    <div class="type-card" data-system="jujutsu" style="flex:1">咒力·咒术<div class="tooltip">总监部注册体系。术式刻印觉醒→生得术式→领域展开→咒术师评级。与灵力体系共存，不可兼有回路与刻印。</div></div>
+                                </div>
+                            </div>
+
+                            <!-- 异能表单 (灵力体系) -->
+                            <div id="esper-form">
+
+                            <div class="form-group">
+                                <label>异能类型<span class="mandatory-star">*</span></label>
+                                <div class="type-cards">
+                                    <div class="type-card" data-type="阿瑞斯">阿瑞斯<div class="tooltip">
+                                            【阿瑞斯型】<br>专注于直接物理杀伤与自身战斗力强化的异能。<br>定位：战斗中的主要打击力量，前线突击和抗击单位。<br>回路特征：回路节点在被激发后能维持"激发态"相当长的时间，一次完整灵力循环完成后效果可持续输出较长时间，持续作战能力强。</div>
+                                    </div>
+                                    <div class="type-card" data-type="宙斯">宙斯<div class="tooltip">
+                                            【宙斯型】<br>专注于大规模能量操控和区域范围打击与压制的异能。<br>定位：清剿大规模低级目标、战场环境塑造、火力压制。<br>回路特征：完成一次完整循环所需关键节点少、回路行程短，灵力能迅速走完全程并回归中枢。启动速度快、单次灵力输出量高，适合高频次打击或大范围覆盖。</div>
+                                    </div>
+                                    <div class="type-card" data-type="雅典娜">雅典娜<div class="tooltip">
+                                            【雅典娜型】<br>提供支援功能的异能，如治疗、侦察和通讯，或以其他方式强化我方或削弱敌方战力。<br>定位：团队生存与协作的核心、战术指挥中枢。<br>回路特征：回路节点对外界灵力变化高度敏感，能精细感知周围灵力场的波动与流动状态，赋予天然的灵力感知优势。</div>
+                                    </div>
+                                    <div class="type-card" data-type="赫菲斯托斯">赫菲斯托斯<div class="tooltip">
+                                            【赫菲斯托斯型】<br>能够构造物理实体或为其附加特性的异能。包括武器制造、防护器械构筑和阵地陷阱布设。<br>定位：装备制造、阵地构筑、后勤保障。<br>回路特征：回路节点数量多且旁路丰富，不同节点间能产生异能效应的有效组合极多。效果可精细调控、高度可编程，能在同一核心概念下衍生出形态各异的创造物。</div>
+                                    </div>
+                                    <div class="type-card" data-type="阿波罗">阿波罗<div class="tooltip">
+                                            【阿波罗型】<br>补充分类，用于归纳无法被明确划入前四类的异能。<br>包含情况：①基于特殊原理或概念层面运作、效果独特的异能（如"存在抹除"）；②同时具备多种不同类型效果的复合型异能（如兼具攻击与治疗）。<br>定位：特殊战术单位、奇兵。<br>回路特征：回路整体结构或节点呈现出其他四型均不具备的特殊形态，"神谕"无法将其归入标准模板，表现形态各异、难以预测。</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group"><label for="power-name">异能名称<span
+                                        class="mandatory-star">*</span></label><input type="text" id="power-name"
+                                    placeholder="例如: 火焰操控"></div>
+                            <div class="form-group"><label for="power-desc">异能描述<span
+                                        class="mandatory-star">*</span></label><textarea id="power-desc" rows="3"
+                                    placeholder="简述异能的效果。"></textarea></div>
+                            <div class="form-group"><label for="power-rank">异能等阶</label><select
+                                    id="power-rank"><!-- 动态生成 --></select></div>
+
+                            <div class="form-group">
+                                <label>异能多维评价 <span style="font-weight:normal;font-size:0.8em;color:#888;">(选填，填值: E~A，可附加"+")</span></label>
+                                <div class="eval-grid">
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">破坏力
+                                                <span class="eval-tooltip">
+                                                    <b>【破坏力】</b>异能直接造成物理破坏的能力。<br>"+"代表能在短时间内产生远高于常态的峰值输出（如蓄力爆发、透支释放）。<br><br>
+                                                    E: 仅能影响个人或小型物体，破坏力接近普通人使用武器<br>
+                                                    D: 可稳定击毁门窗、家具、车辆等常规目标<br>
+                                                    C: 可破坏建筑局部结构，对小型建筑构成威胁<br>
+                                                    B: 可摧毁大型建筑、街区级目标<br>
+                                                    A: 可造成区域性灾害，对城市甚至更大范围构成毁灭性威胁
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-destruction" placeholder="C" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-destruction-note" placeholder="批注（选填）">
+                                    </div>
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">防护性
+                                                <span class="eval-tooltip">
+                                                    <b>【防护性】</b>异能用于防御、抵挡、削弱或化解外来攻击与有害影响的能力。<br>"+"代表对特殊危害形式（如真空、辐射、毒气、极端温度、精神侵蚀等）具有针对性的专项防护能力。<br><br>
+                                                    E: 防护力接近普通个人单兵护具（如防弹背心），最多仅能抵挡轻型单兵武器<br>
+                                                    D: 可达小型个人掩体级别，能抵御步枪、手雷等常规单兵火力<br>
+                                                    C: 相当于战车装甲级别，可承受重火力直击<br>
+                                                    B: 足以抵挡战术导弹或同等威力的攻击<br>
+                                                    A: 足以在核爆中心幸存，可承受区域性毁灭打击
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-defense" placeholder="C" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-defense-note" placeholder="批注（选填）">
+                                    </div>
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">持续性
+                                                <span class="eval-tooltip">
+                                                    <b>【持续性】</b>异能效应维持起效、不因使用者停止主动输出而消散的能力。<br>"+"代表能力创造物、印记、领域等可在使用者不持续维持的情况下长期独立留存。<br><br>
+                                                    E: 仅在发动瞬间生效，效果转瞬即逝<br>
+                                                    D: 可持续数秒至数分钟<br>
+                                                    C: 可持续数十分钟至数小时<br>
+                                                    B: 可持续数天以上，使用者无需主动持续维持<br>
+                                                    A: 几乎永久存在或可长期稳定运作
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-persistence" placeholder="D" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-persistence-note" placeholder="批注（选填）">
+                                    </div>
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">精密度
+                                                <span class="eval-tooltip">
+                                                    <b>【精密度】</b>异能效果的强弱、对象、路径、具体效应等受使用者主观意识调整的可控程度。<br>"+"代表可设定自动执行逻辑、触发条件或行为规则（如自动追踪、条件触发、预设脚本）。<br><br>
+                                                    E: 仅能控制能力开关，效果基本固定<br>
+                                                    D: 能调整强度、目标等主要参数，但细节有限<br>
+                                                    C: 能对能力对象、路径、条件、规模等进行独立调控<br>
+                                                    B: 能同时对效果过程中的复数参数进行精细的实时操控<br>
+                                                    A: 对效果近乎完全的控制，能够做到微观尺度的修正<br>
+                                                    举例：发射火球但无法调节其大小与速度→精密度E；能控制每一缕火焰的轨迹与形态→精密度B；火焰可自动追踪并绕开障碍命中敌人→精密度B+
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-precision" placeholder="B" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-precision-note" placeholder="批注（选填）">
+                                    </div>
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">功能性
+                                                <span class="eval-tooltip">
+                                                    <b>【功能性】</b>异能已开发或已被证明具备潜力的泛用程度——即同一异能能在多少种不同场景中发挥作用。<br>"+"代表在高价值的特殊领域拥有特化适性（如治疗、情报、生产、精神干涉等）。<br><br>
+                                                    E: 基本只有单一用途<br>
+                                                    D: 存在少量衍生用途<br>
+                                                    C: 能在多个场景发挥作用<br>
+                                                    B: 兼具战斗、辅助、侦察、控制等多种功能<br>
+                                                    A: 能衍生出完整的能力体系，拥有极高的开发空间<br>
+                                                    举例：单纯释放电流→功能性D；电磁力操纵（可衍生为加速、悬浮、感应、干扰等）→功能性A；电磁力操纵，且针对电子设备的读取与控制特化→功能性A+
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-versatility" placeholder="D" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-versatility-note" placeholder="批注（选填）">
+                                    </div>
+                                    <div class="eval-item">
+                                        <div class="eval-item-header">
+                                            <span class="eval-label">射程范围
+                                                <span class="eval-tooltip">
+                                                    <b>【射程范围】</b>异能能够完整起效的最大距离。<br>"+"代表可超出标准射程继续作用，但超出标准射程后效果会出现明显衰减（如精度下降、威力减弱）。<br><br>
+                                                    E: 必须直接接触目标<br>
+                                                    D: 数米范围<br>
+                                                    C: 数十米至百米范围<br>
+                                                    B: 数百米至数公里范围<br>
+                                                    A: 覆盖城市级以上范围<br>
+                                                    举例：触碰方可发动→射程范围E；标准有效范围为街区级别→射程范围C；标准为街区级别，但能以精度下降为代价扩展至城市级别→射程范围C+
+                                                </span>
+                                            </span>
+                                            <input type="text" class="eval-input" id="eval-range" placeholder="C" maxlength="2">
+                                        </div>
+                                        <input type="text" class="eval-note-input" id="eval-range-note" placeholder="批注（选填）">
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="form-fieldset">
+                            <legend class="form-legend">个人身份构筑</legend>
+                            <div class="form-group"><label for="char-name">姓名</label><input type="text" id="char-name"
+                                    placeholder="选填"></div>
+
+                            <div class="form-group">
+                                <label>性别</label>
+                                <div class="gender-row">
+                                    <div class="gender-select-wrapper">
+                                        <select id="char-gender-select">
+                                            <option value="">未指定</option>
+                                            <option value="男">男</option>
+                                            <option value="女">女</option>
+                                            <option value="custom">自定义 ></option>
+                                        </select>
+                                    </div>
+                                    <div class="gender-custom-wrapper">
+                                        <input type="text" id="char-gender-custom" placeholder="请输入性别">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group"><label for="char-age">年龄</label><input type="text" id="char-age"
+                                    placeholder="例如: 17岁"></div>
+
+                            <div class="form-group">
+                                <label for="char-identity">身份</label>
+                                <textarea id="char-identity" rows="1" style="resize: vertical; min-height: 38px;"
+                                    placeholder="例如: 转校生"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>外貌 <button id="detail-toggle-btn" class="detail-btn">细致设定</button></label>
+                                <textarea id="char-appearance" rows="2" placeholder="整体印象"></textarea>
+                                <div id="appearance-sub-fields" class="sub-fields">
+                                    <input type="text" id="char-app-vibe" placeholder="气质 (如: 阴郁、阳光)">
+                                    <input type="text" id="char-app-hair" placeholder="头发 (如: 银色长发)">
+                                    <input type="text" id="char-app-face" placeholder="脸部 (如: 刀削般的面庞)">
+                                    <input type="text" id="char-app-body" placeholder="体型 (如: 纤细、壮硕)">
+                                    <input type="text" id="char-app-skin" placeholder="皮肤 (如: 苍白)">
+                                </div>
+                            </div>
+
+                            <div class="form-group"><label for="char-background">背景故事</label><textarea
+                                    id="char-background" rows="2" placeholder="选填"></textarea></div>
+                            <div class="form-group"><label for="char-personality">性格</label><textarea
+                                    id="char-personality" rows="2" placeholder="选填"></textarea></div>
+                        </fieldset>
+                    </div>
+                    <!-- 咒术表单 (咒力体系) -->
+                    <div id="jujutsu-form" class="form-area" style="display:none;">
+                        <fieldset class="form-fieldset">
+                            <legend class="form-legend">咒术设定</legend>
+                            <div class="form-group">
+                                <label>生得术式<span class="mandatory-star">*</span></label>
+                                <div style="display:flex;gap:8px;margin-bottom:8px">
+                                    <button type="button" id="random-jutsu-btn" class="detail-btn" style="flex:1">🎲 随机抽取术式</button>
+                                    <button type="button" id="custom-jutsu-btn" class="detail-btn" style="flex:1">✏️ 自行编写</button>
+                                </div>
+                                <input type="text" id="jujutsu-name" placeholder="术式名称 (如: 十种影法术)" style="display:none">
+                                <textarea id="jujutsu-desc" rows="3" placeholder="术式效果描述" style="display:none"></textarea>
+                                <div id="jujutsu-random-result" style="display:none;background:#151920;padding:12px;border-radius:6px;margin-top:4px"></div>
+                            </div>
+                            <div class="form-group"><label for="jujutsu-rank">咒术师评级</label><select id="jujutsu-rank"><option value="四级">四级</option><option value="三级" selected>三级</option><option value="二级">二级</option><option value="一级">一级</option><option value="特级">特级</option></select></div>
+                            <div class="form-group"><label>咒力特征</label><input type="text" id="jujutsu-trait" placeholder="如: 咒力呈暗紫色、咒力输出效率极高"></div>
+                        </fieldset>
+                    </div>
+                    <!-- 角色基础信息 (共用) -->
+                    <div class="preview-area">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <span style="color: #888; font-size: 0.9em;">数据预览终端</span>
+                            <button id="design-next-btn" class="final-confirm-btn" disabled
+                                style="width: auto; padding: 5px 20px; font-size: 0.9em;">下一步：世界调整 ></button>
+                        </div>
+                        <textarea id="preview-box" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图4: World Adjust View (新增) -->
+            <div id="world-adjust-view" class="view-container">
+                <button id="world-adjust-back-btn" class="icon-back-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round" width="24" height="24">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                    <div class="view-header">
+                        <h2>世界参数调整</h2>
+                        <div class="control-bar">
+                            <button id="toggle-edit-mode" class="toggle-btn">⚡ 启用编辑</button>
+                            <button id="toggle-unlock-mode" class="toggle-btn warn" disabled>🔒 解除锁定</button>
+                        </div>
+                    </div>
+                    <div id="world-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title" class="modal-title"></h3>
+                <button id="modal-close" class="modal-close">×</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+</body>
+
+</html>
+```
